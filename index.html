@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GitHub Blob → Raw URL Converter</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f9fafb; }
+    .container { max-width: 650px; margin: auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
+    h2 { text-align: center; }
+    input, select, button { width: 100%; padding: 10px; margin-top: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc;}
+    button { background: #2563eb; color: white; border: none; cursor: pointer;}
+    button:hover { background: #1d4ed8; }
+    .output { margin-top: 20px; padding: 10px; background: #f3f4f6; border-radius: 8px; word-break: break-all; position: relative;}
+    .copy-btn { margin-top: 10px; background: #059669; }
+    .copy-btn:hover { background: #047857; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🔗 GitHub Blob → Raw URL Converter</h2>
+    <input type="text" id="githubUrl" placeholder="Paste GitHub blob URL here">
+    
+    <label for="mode">Reference Type:</label>
+    <select id="mode">
+      <option value="branch">Branch Reference (latest)</option>
+      <option value="commit">Commit Reference (exact)</option>
+    </select>
+
+    <label for="branchName">Branch Name (only if using branch mode):</label>
+    <input type="text" id="branchName" placeholder="main" value="main">
+
+    <button onclick="convertUrl()">Convert</button>
+    <div id="result" class="output"></div>
+  </div>
+
+  <script>
+    function convertUrl() {
+      let url = document.getElementById("githubUrl").value.trim();
+      let mode = document.getElementById("mode").value;
+      let branch = document.getElementById("branchName").value.trim() || "main";
+
+      if (!url.includes("github.com") || !url.includes("/blob/")) {
+        document.getElementById("result").innerHTML = "❌ Please enter a valid GitHub blob URL.";
+        return;
+      }
+
+      // Remove line anchors
+      url = url.split("#")[0];
+
+      let parts = url.split("github.com/")[1].split("/");
+      let user = parts[0];
+      let repo = parts[1];
+      let ref = parts[3]; // branch or commit hash from original URL
+      let path = parts.slice(4).join("/");
+
+      let rawUrl;
+      if (mode === "commit") {
+        rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${ref}/${path}`;
+      } else {
+        rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
+      }
+
+      document.getElementById("result").innerHTML = `
+        ✅ Raw URL:<br>
+        <input type="text" id="rawLink" value="${rawUrl}" readonly style="width:100%; padding:8px; margin-top:8px; border-radius:6px; border:1px solid #ccc;">
+        <button class="copy-btn" onclick="copyRaw()">📋 Copy</button>
+      `;
+    }
+
+    function copyRaw() {
+      let copyText = document.getElementById("rawLink");
+      copyText.select();
+      copyText.setSelectionRange(0, 99999); // For mobile
+      document.execCommand("copy");
+      alert("✅ Raw URL copied to clipboard!");
+    }
+  </script>
+</body>
+</html>
