@@ -1,79 +1,456 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>GitHub Blob → Raw URL Converter</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 40px; background: #f9fafb; }
-    .container { max-width: 650px; margin: auto; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);}
-    h2 { text-align: center; }
-    input, select, button { width: 100%; padding: 10px; margin-top: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc;}
-    button { background: #2563eb; color: white; border: none; cursor: pointer;}
-    button:hover { background: #1d4ed8; }
-    .output { margin-top: 20px; padding: 10px; background: #f3f4f6; border-radius: 8px; word-break: break-all; position: relative;}
-    .copy-btn { margin-top: 10px; background: #059669; }
-    .copy-btn:hover { background: #047857; }
+    :root{
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --text: #0f172a;
+      --primary: #2563eb;
+      --primary-700: #1d4ed8;
+      --success: #059669;
+      --shadow: rgba(2,6,23,0.08);
+      --glass: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.6));
+      --radius: 12px;
+      --input-bg: #f3f4f6;
+    }
+
+    .dark {
+      --bg: #0b1220;
+      --card: #0f1724;
+      --muted: #94a3b8;
+      --text: #e6eef8;
+      --primary: #3b82f6;
+      --primary-700: #2563eb;
+      --success: #10b981;
+      --shadow: rgba(2,6,23,0.6);
+      --glass: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      --radius: 12px;
+      --input-bg: #0b1220;
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      background: radial-gradient(1000px 500px at 10% 10%, rgba(37,99,235,0.06), transparent),
+                  radial-gradient(800px 300px at 90% 90%, rgba(5,150,105,0.03), transparent),
+                  var(--bg);
+      color:var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:28px;
+      box-sizing:border-box;
+    }
+
+    .wrap{
+      max-width:760px;
+      margin: 28px auto;
+      background: var(--glass);
+      border-radius:calc(var(--radius) + 6px);
+      padding:18px;
+      box-shadow: 0 8px 30px var(--shadow);
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .card{
+      background: var(--card);
+      border-radius: var(--radius);
+      padding:20px;
+      box-shadow: 0 4px 18px rgba(2,6,23,0.06);
+      border: 1px solid rgba(2,6,23,0.04);
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      justify-content:space-between;
+      margin-bottom:16px;
+    }
+
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+    }
+
+    .logo{
+      width:48px; height:48px; display:grid; place-items:center; border-radius:10px;
+      background:linear-gradient(135deg,var(--primary),var(--primary-700));
+      color:white; font-weight:700; font-size:18px;
+    }
+
+    h1{
+      font-size:18px;
+      margin:0;
+      line-height:1;
+    }
+    p.lead{
+      margin:0;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .controls{
+      display:grid;
+      grid-template-columns: 1fr 160px;
+      gap:12px;
+      margin-top:12px;
+    }
+
+    label{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin-top:10px;
+    }
+
+    input[type="text"], select {
+      width:100%;
+      padding:12px 14px;
+      font-size:15px;
+      border-radius:10px;
+      border: 1px solid rgba(2,6,23,0.06);
+      background:var(--input-bg);
+      color:var(--text);
+      outline:none;
+      box-sizing:border-box;
+    }
+
+    input[type="text"]::placeholder { color: #9ca3af; }
+
+    .row {
+      display:flex;
+      gap:12px;
+      margin-top:12px;
+      align-items:center;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      border:none;
+      font-weight:600;
+      color:white;
+      background:var(--primary);
+      transition:transform .08s ease, box-shadow .08s ease, background .12s ease;
+    }
+    .btn.secondary{
+      background:transparent;
+      border:1px solid rgba(2,6,23,0.06);
+      color:var(--text);
+    }
+    .btn:active{ transform:translateY(1px) }
+
+    .btn.copy { background:var(--success) }
+    .mode {
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .output{
+      margin-top:16px;
+      padding:14px;
+      background:var(--input-bg);
+      border-radius:10px;
+      word-break:break-word;
+      position:relative;
+      border:1px solid rgba(2,6,23,0.03);
+    }
+
+    .output .raw{
+      width:100%;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid rgba(2,6,23,0.04);
+      background:transparent;
+      color:var(--text);
+      font-size:14px;
+    }
+
+    .small{
+      font-size:13px;
+      color:var(--muted);
+    }
+
+    .footer{
+      margin-top:12px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+    }
+
+    .settings{
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .toggle{
+      width:44px; height:26px; background:rgba(2,6,23,0.06); border-radius:20px; position:relative;
+      cursor:pointer; padding:3px;
+    }
+    .toggle .knob{
+      width:20px; height:20px; background:white; border-radius:50%; transform:translateX(0);
+      transition:transform .18s ease, background .18s ease;
+    }
+    .dark .toggle { background: rgba(255,255,255,0.08) }
+    .dark .toggle .knob { background:var(--primary) ; transform: translateX(18px) }
+
+    .toast{
+      position:fixed;
+      right:20px;
+      bottom:20px;
+      padding:12px 16px;
+      background: rgba(0,0,0,0.8);
+      color:white;
+      border-radius:10px;
+      font-weight:600;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.5);
+      opacity:0;
+      pointer-events:none;
+      transform:translateY(8px);
+      transition:opacity .18s ease, transform .18s ease;
+      z-index:9999;
+    }
+    .toast.show {
+      opacity:1;
+      transform:translateY(0);
+      pointer-events:auto;
+    }
+
+    /* responsive */
+    @media (max-width:720px){
+      .controls { grid-template-columns: 1fr; }
+      .row { flex-direction:column; align-items:stretch; }
+      header{ gap:10px; flex-direction:column; align-items:flex-start; }
+    }
+
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>🔗 GitHub Blob → Raw URL Converter</h2>
-    <input type="text" id="githubUrl" placeholder="Paste GitHub blob URL here">
-    
-    <label for="mode">Reference Type:</label>
-    <select id="mode">
-      <option value="branch">Branch Reference (latest)</option>
-      <option value="commit">Commit Reference (exact)</option>
-    </select>
+  <div class="wrap">
+    <div class="card" role="region" aria-labelledby="title">
+      <header>
+        <div class="brand">
+          <div class="logo" aria-hidden="true">BR</div>
+          <div>
+            <h1 id="title">GitHub Blob → Raw URL Converter</h1>
+            <p class="lead">Quickly turn a GitHub blob URL into a raw.githubusercontent.com link.</p>
+          </div>
+        </div>
 
-    <label for="branchName">Branch Name (only if using branch mode):</label>
-    <input type="text" id="branchName" placeholder="main" value="main">
+        <div class="settings" aria-hidden="false">
+          <div title="Toggle dark mode" id="themeToggle" class="toggle" role="button" tabindex="0" aria-pressed="false" aria-label="Toggle dark mode">
+            <div class="knob"></div>
+          </div>
+        </div>
+      </header>
 
-    <button onclick="convertUrl()">Convert</button>
-    <div id="result" class="output"></div>
+      <div>
+        <label for="githubUrl">GitHub blob URL</label>
+        <input id="githubUrl" type="text" placeholder="https://github.com/owner/repo/blob/main/path/to/file.ext" aria-label="GitHub blob URL">
+
+        <div class="controls" style="margin-top:8px;">
+          <div>
+            <label for="mode">Reference type</label>
+            <select id="mode" aria-label="Reference type">
+              <option value="branch">Branch reference (latest)</option>
+              <option value="commit">Commit reference (exact)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="branchName">Branch name (used in branch mode)</label>
+            <input id="branchName" type="text" placeholder="main" value="main" aria-label="Branch name">
+          </div>
+        </div>
+
+        <div class="row">
+          <button id="convertBtn" class="btn" aria-label="Convert URL">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Convert
+          </button>
+
+          <button id="clearBtn" class="btn secondary" aria-label="Clear inputs">
+            Clear
+          </button>
+        </div>
+
+        <div id="result" class="output" aria-live="polite" aria-atomic="true" style="display:none;">
+          <!-- filled by JS -->
+        </div>
+
+        <div class="footer">
+          <div class="small">Supports line anchors (#Lxx) removal and both branch/commit references.</div>
+          <div class="small">Made with ♥</div>
+        </div>
+      </div>
+    </div>
   </div>
 
+  <div id="toast" class="toast" role="status" aria-live="polite">Copied ✔</div>
+
   <script>
-    function convertUrl() {
-      let url = document.getElementById("githubUrl").value.trim();
-      let mode = document.getElementById("mode").value;
-      let branch = document.getElementById("branchName").value.trim() || "main";
+    (function(){
+      // theme: respect saved preference or system
+      const root = document.documentElement;
+      const saved = localStorage.getItem('btg-theme');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (saved === 'dark' || (!saved && prefersDark)) document.body.classList.add('dark');
 
-      if (!url.includes("github.com") || !url.includes("/blob/")) {
-        document.getElementById("result").innerHTML = "❌ Please enter a valid GitHub blob URL.";
-        return;
+      const toggle = document.getElementById('themeToggle');
+      const toastEl = document.getElementById('toast');
+
+      function setToggleAria(){
+        const isDark = document.body.classList.contains('dark');
+        toggle.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+      }
+      setToggleAria();
+
+      function showToast(msg = 'Copied ✔'){
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        setTimeout(()=> toastEl.classList.remove('show'), 1800);
       }
 
-      // Remove line anchors
-      url = url.split("#")[0];
+      toggle.addEventListener('click', () => {
+        document.body.classList.toggle('dark');
+        localStorage.setItem('btg-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+        setToggleAria();
+      });
+      toggle.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle.click(); }});
 
-      let parts = url.split("github.com/")[1].split("/");
-      let user = parts[0];
-      let repo = parts[1];
-      let ref = parts[3]; // branch or commit hash from original URL
-      let path = parts.slice(4).join("/");
+      // elements
+      const githubUrl = document.getElementById('githubUrl');
+      const mode = document.getElementById('mode');
+      const branchName = document.getElementById('branchName');
+      const convertBtn = document.getElementById('convertBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const result = document.getElementById('result');
 
-      let rawUrl;
-      if (mode === "commit") {
-        rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${ref}/${path}`;
-      } else {
-        rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/${path}`;
+      function sanitizeUrl(u){
+        return (u || '').trim().split('#')[0];
       }
 
-      document.getElementById("result").innerHTML = `
-        ✅ Raw URL:<br>
-        <input type="text" id="rawLink" value="${rawUrl}" readonly style="width:100%; padding:8px; margin-top:8px; border-radius:6px; border:1px solid #ccc;">
-        <button class="copy-btn" onclick="copyRaw()">📋 Copy</button>
-      `;
-    }
+      function buildRawUrl(url, useCommit = false, branch = 'main'){
+        try {
+          if (!url.includes('github.com') || !url.includes('/blob/')) return null;
+          const after = url.split('github.com/')[1];
+          if (!after) return null;
+          const parts = after.split('/').filter(Boolean);
+          // expected: owner, repo, blob, ref, path...
+          if (parts.length < 5 || parts[2] !== 'blob') return null;
+          const user = parts[0];
+          const repo = parts[1];
+          const ref = parts[3];
+          const path = parts.slice(4).join('/');
+          if (!user || !repo || !path) return null;
+          const finalRef = useCommit ? ref : branch || 'main';
+          return `https://raw.githubusercontent.com/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/${encodeURIComponent(finalRef)}/${encodeURI(path)}`;
+        } catch (e) {
+          return null;
+        }
+      }
 
-    function copyRaw() {
-      let copyText = document.getElementById("rawLink");
-      copyText.select();
-      copyText.setSelectionRange(0, 99999); // For mobile
-      document.execCommand("copy");
-      alert("✅ Raw URL copied to clipboard!");
-    }
+      function renderResult(rawUrl){
+        if (!rawUrl){
+          result.style.display = 'block';
+          result.innerHTML = '<div class="small" style="color:#ef4444">❌ Please enter a valid GitHub blob URL.</div>';
+          return;
+        }
+
+        result.style.display = 'block';
+        result.innerHTML = `
+          <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+            <div style="flex:1; font-weight:700; color:var(--muted)">Raw URL</div>
+            <div class="small" style="color:var(--muted)">Copied link points to: <span style="font-weight:600; color:var(--text); margin-left:6px">${mode.value === 'commit' ? 'commit' : 'branch'}</span></div>
+          </div>
+          <input id="rawLink" class="raw" value="${rawUrl}" readonly aria-label="Raw URL">
+          <div style="display:flex; gap:8px; margin-top:10px; align-items:center;">
+            <button id="copyBtn" class="btn copy" aria-label="Copy raw url">📋 Copy</button>
+            <a id="openBtn" class="btn secondary" href="${rawUrl}" target="_blank" rel="noopener noreferrer">Open</a>
+            <button id="shareBtn" class="btn secondary" style="display:flex; align-items:center;">Share</button>
+          </div>
+        `;
+
+        const copyBtn = document.getElementById('copyBtn');
+        const rawLink = document.getElementById('rawLink');
+        const shareBtn = document.getElementById('shareBtn');
+
+        copyBtn.addEventListener('click', async function(){
+          try{
+            if (navigator.clipboard && navigator.clipboard.writeText){
+              await navigator.clipboard.writeText(rawLink.value);
+            } else {
+              rawLink.select();
+              document.execCommand('copy');
+            }
+            showToast('✅ Raw URL copied');
+          } catch (e){
+            showToast('Copy failed');
+          }
+        });
+
+        shareBtn.addEventListener('click', async function(){
+          if (navigator.share){
+            try {
+              await navigator.share({ title: 'Raw GitHub URL', text: rawLink.value, url: rawLink.value });
+            } catch (e) {
+              // user cancelled or failed
+            }
+          } else {
+            // fallback: copy to clipboard
+            try {
+              if (navigator.clipboard && navigator.clipboard.writeText){
+                await navigator.clipboard.writeText(rawLink.value);
+              } else {
+                rawLink.select(); document.execCommand('copy');
+              }
+              showToast('Link copied (share fallback)');
+            } catch (e) {
+              showToast('Share not available');
+            }
+          }
+        });
+      }
+
+      convertBtn.addEventListener('click', function(){
+        const url = sanitizeUrl(githubUrl.value);
+        const useCommit = (mode.value === 'commit');
+        const branch = branchName.value || 'main';
+        const raw = buildRawUrl(url, useCommit, branch);
+        renderResult(raw);
+      });
+
+      // support pressing Enter in the URL input
+      githubUrl.addEventListener('keydown', function(e){
+        if (e.key === 'Enter') { e.preventDefault(); convertBtn.click(); }
+      });
+
+      clearBtn.addEventListener('click', function(){
+        githubUrl.value = '';
+        result.style.display = 'none';
+        githubUrl.focus();
+      });
+
+      // initial helpers
+      // if user pastes a blob URL with line anchors, it will be sanitized by convert
+    })();
   </script>
 </body>
 </html>
